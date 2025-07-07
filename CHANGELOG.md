@@ -1,3 +1,12 @@
+# [0.89.0](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/compare/v0.88.0...v0.89.0) (2025-07-07)
+
+
+### Features
+
+* remove JSPI origin trial mechanisms ([#299](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/issues/299)) ([53ce943](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/commit/53ce943dccd8ca184306b5ef9bc59b97c2d24ceb))
+
+
+
 # [0.88.0](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/compare/v0.87.0...v0.88.0) (2025-04-07)
 
 
