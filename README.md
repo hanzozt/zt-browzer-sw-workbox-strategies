@@ -4,11 +4,11 @@
 
 <p align="center">
     <b>
-    <a>@openziti/ziti-browzer-sw-workbox-strategies</a>
+    <a>@hanzozt/ziti-browzer-sw-workbox-strategies</a>
     <br>
     <br>
     <b>
-    This component contains a sub-component of the ServiceWorker used as part of the <a href="https://ziti.dev/about">OpenZiti</a> Zero Trust browZer stack</b>
+    This component contains a sub-component of the ServiceWorker used as part of the <a href="https://ziti.dev/about">Hanzo ZT</a> Zero Trust browZer stack</b>
     
 </p>
 
@@ -16,18 +16,18 @@
     <br>
     <b>Are you interested in knowing how to easily embed programmable, high performance, zero trust networking into your app, on any internet connection, without VPNs?
     <br>
-    Learn more about our <a href="https://ziti.dev/about">OpenZiti</a> project by clicking the image below:</b>
+    Learn more about our <a href="https://ziti.dev/about">Hanzo ZT</a> project by clicking the image below:</b>
     <br>
     <br>
     <a href="https://ziti.dev"><img src="ziti-dev-logo.png" width="200"></a>
 </p>
 
 ---
-[![Build](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/workflows/Build/badge.svg?branch=main)]()
-[![CodeQL](https://github.com/openziti/ziti-browzer-sw-workbox-strategies/workflows/CodeQL/badge.svg?branch=main)]()
-[![Issues](https://img.shields.io/github/issues-raw/openziti/ziti-browzer-sw-workbox-strategies)]()
+[![Build](https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies/workflows/Build/badge.svg?branch=main)]()
+[![CodeQL](https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies/workflows/CodeQL/badge.svg?branch=main)]()
+[![Issues](https://img.shields.io/github/issues-raw/hanzozt/ziti-browzer-sw-workbox-strategies)]()
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![LOC](https://img.shields.io/tokei/lines/github/openziti/ziti-browzer-sw-workbox-strategies)]()
+[![LOC](https://img.shields.io/tokei/lines/github/hanzozt/ziti-browzer-sw-workbox-strategies)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=rounded)](CONTRIBUTING.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
@@ -49,17 +49,17 @@ coming soon...
 
 ## Installation
 
-The `ziti-browzer-sw-workbox-strategies` is intended to be consumed by the [`ziti-http-agent`](https://github.com/openziti/ziti-http-agent), not as a general purpose module in your build. It is available through [npm](https://www.npmjs.com/package/@openziti/ziti-browzer-sw-workbox-strategies), and installed via the following command:
+The `ziti-browzer-sw-workbox-strategies` is intended to be consumed by the [`ziti-http-agent`](https://github.com/hanzozt/ziti-http-agent), not as a general purpose module in your build. It is available through [npm](https://www.npmjs.com/package/@hanzozt/ziti-browzer-sw-workbox-strategies), and installed via the following command:
 
-    npm i @openziti/ziti-browzer-sw-workbox-strategies
+    npm i @hanzozt/ziti-browzer-sw-workbox-strategies
 
-The the [`ziti-http-agent`](https://github.com/openziti/ziti-http-agent) serves the contents of `ziti-browzer-sw` (and `ziti-browzer-sw-workbox-strategies` which is embedded within `ziti-browzer-sw`) in response to HTTP requests originating from the 
-[`ziti-browzer-runtime`](https://github.com/openziti/ziti-browzer-runtime). It does so by using the code shown below:
+The the [`ziti-http-agent`](https://github.com/hanzozt/ziti-http-agent) serves the contents of `ziti-browzer-sw` (and `ziti-browzer-sw-workbox-strategies` which is embedded within `ziti-browzer-sw`) in response to HTTP requests originating from the 
+[`ziti-browzer-runtime`](https://github.com/hanzozt/ziti-browzer-runtime). It does so by using the code shown below:
  
 ```js     
 
 // Locate the path to the ServiceWorker distro within the build of our running instance
-let pathToZitiBrowzerSwModule = require.resolve('@openziti/ziti-browzer-sw');
+let pathToZitiBrowzerSwModule = require.resolve('@hanzozt/ziti-browzer-sw');
 
 pathToZitiBrowzerSwModule = pathToZitiBrowzerSwModule.substring(0, pathToZitiBrowzerSwModule.lastIndexOf('/'));
 
@@ -91,12 +91,12 @@ if (err) {  // If we can't read the file from disk
 
 ## Contributing
 
-[![AllContibs](https://img.shields.io/github/contributors/openziti/ziti-browzer-sw-workbox-strategies)]()
+[![AllContibs](https://img.shields.io/github/contributors/hanzozt/ziti-browzer-sw-workbox-strategies)]()
 
 
 Your Contributions are welcome! Please see our [Contributing Guide](Contributing.md) for more details. Thanks to all our contributors!
 
-[![Contibs](https://contrib.rocks/image?repo=openziti/ziti-browzer-sw-workbox-strategies)]()
+[![Contibs](https://contrib.rocks/image?repo=hanzozt/ziti-browzer-sw-workbox-strategies)]()
 
 
 

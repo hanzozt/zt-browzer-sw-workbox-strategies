@@ -12,7 +12,7 @@ import * as cheerio from 'cheerio';
 import { 
   ZitiBrowzerCore,
   ZITI_CONSTANTS
-} from '@openziti/ziti-browzer-core';
+} from '@hanzozt/ziti-browzer-core';
 
 import pjson from '../package.json';
 
@@ -1199,7 +1199,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
                     //     .attr('http-equiv', 'origin-trial')
                     //     .attr('content', `${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.runtime.originTrialToken}`);
 
-                    let kcElement = $('<meta name="author" content="OpenZiti BrowZer" />')
+                    let kcElement = $('<meta name="author" content="Hanzo ZT BrowZer" />')
                    
                     // Locate the CSP
                     let cspElement = $('meta[http-equiv="content-security-policy"]');

@@ -1,8 +1,8 @@
 {
-  "name": "@openziti/ziti-browzer-sw-workbox-strategies",
+  "name": "@hanzozt/ziti-browzer-sw-workbox-strategies",
   "version": "0.89.0",
   "type": "module",
-  "description": "Custom Workbox Strategies used as part of the OpenZiti browZer stack",
+  "description": "Custom Workbox Strategies used as part of the Hanzo ZT browZer stack",
   "main": "src/index.js",
   "scripts": {
     "build": "run-s clean bundle-sw",
@@ -68,17 +68,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/openziti/ziti-browzer-sw-workbox-strategies.git"
+    "url": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies.git"
   },
   "author": {
     "name": "NetFoundry",
     "url": "http://netfoundry.io",
-    "email": "openziti@netfoundry.io"
+    "email": "hanzozt@netfoundry.io"
   },
   "bugs": {
-    "url": "https://github.com/openziti/ziti-browzer-sw-workbox-strategies/issues"
+    "url": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies/issues"
   },
-  "homepage": "https://github.com/openziti/ziti-browzer-sw-workbox-strategies",
+  "homepage": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies",
   "babel": {
     "plugins": [
       "dynamic-import-node"
@@ -88,7 +88,7 @@
     ]
   },
   "dependencies": {
-    "@openziti/ziti-browzer-core": "^0.68.0",
+    "@hanzozt/ziti-browzer-core": "^0.68.0",
     "async-mutex": "^0.5.0",
     "cheerio": "^1.0.0-rc.12",
     "jwt-decode": "^3.1.2",
