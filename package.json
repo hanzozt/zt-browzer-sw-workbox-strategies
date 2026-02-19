@@ -1,5 +1,5 @@
 {
-  "name": "@hanzozt/ziti-browzer-sw-workbox-strategies",
+  "name": "@hanzozt/zt-browzer-sw-workbox-strategies",
   "version": "0.89.0",
   "type": "module",
   "description": "Custom Workbox Strategies used as part of the Hanzo ZT browZer stack",
@@ -13,7 +13,7 @@
   },
   "company": "NetFoundry",
   "keywords": [
-    "ziti",
+    "zt",
     "zero trust",
     "zero-trust",
     "browZer",
@@ -62,13 +62,13 @@
     "typescript": "^5.2.2"
   },
   "workbox": {
-    "browserNamespace": "workbox.zitiStrategies",
-    "outputFilename": "ziti-browzer-sw-workbox-strategies",
+    "browserNamespace": "workbox.ztStrategies",
+    "outputFilename": "zt-browzer-sw-workbox-strategies",
     "packageType": "sw"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies.git"
+    "url": "https://github.com/hanzozt/zt-browzer-sw-workbox-strategies.git"
   },
   "author": {
     "name": "NetFoundry",
@@ -76,9 +76,9 @@
     "email": "hanzozt@netfoundry.io"
   },
   "bugs": {
-    "url": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies/issues"
+    "url": "https://github.com/hanzozt/zt-browzer-sw-workbox-strategies/issues"
   },
-  "homepage": "https://github.com/hanzozt/ziti-browzer-sw-workbox-strategies",
+  "homepage": "https://github.com/hanzozt/zt-browzer-sw-workbox-strategies",
   "babel": {
     "plugins": [
       "dynamic-import-node"
@@ -88,7 +88,7 @@
     ]
   },
   "dependencies": {
-    "@hanzozt/ziti-browzer-core": "^0.68.0",
+    "@hanzozt/zt-browzer-core": "^0.68.0",
     "async-mutex": "^0.5.0",
     "cheerio": "^1.0.0-rc.12",
     "jwt-decode": "^3.1.2",

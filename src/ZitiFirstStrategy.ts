@@ -12,17 +12,17 @@ import * as cheerio from 'cheerio';
 import { 
   ZitiBrowzerCore,
   ZITI_CONSTANTS
-} from '@hanzozt/ziti-browzer-core';
+} from '@hanzozt/zt-browzer-core';
 
 import pjson from '../package.json';
 
 
 export interface ZitiFirstOptions extends StrategyOptions {
-  zitiBrowzerServiceWorkerGlobalScope?: any;
+  ztBrowzerServiceWorkerGlobalScope?: any;
   logLevel?: string;
   eruda?: boolean;
   controllerApi?: string;
-  zitiNetworkTimeoutSeconds?: number;
+  ztNetworkTimeoutSeconds?: number;
   uuid?: string;
 }
 
@@ -34,11 +34,11 @@ type ZitiShouldRouteResult = {
   url?: string | '';
 }
 
-var regexZBR      = new RegExp( /ziti-browzer-runtime-\w{8}\.js/, 'g' );
-var regexZBRnaked = new RegExp( /ziti-browzer-runtime\.js/, 'gi' );
-var regexZBRLogo  = new RegExp( /ziti-browzer-logo/,    'g' );
-var regexZBRcss   = new RegExp( /ziti-browzer-css-\w{8}\.css/,     'g' );
-var regexZBRCORS  = new RegExp( /ziti-cors-proxy/,      'g' );
+var regexZBR      = new RegExp( /zt-browzer-runtime-\w{8}\.js/, 'g' );
+var regexZBRnaked = new RegExp( /zt-browzer-runtime\.js/, 'gi' );
+var regexZBRLogo  = new RegExp( /zt-browzer-logo/,    'g' );
+var regexZBRcss   = new RegExp( /zt-browzer-css-\w{8}\.css/,     'g' );
+var regexZBRCORS  = new RegExp( /zt-cors-proxy/,      'g' );
 var regexEdgeClt  = new RegExp( /\/edge\/client\/v1/,   'g' );
 var regexZBWASM   = new RegExp( /libcrypto.*.wasm/,     'g' );
 var regexPolipop  = new RegExp( /polipop/,              'g' );
@@ -90,13 +90,13 @@ interface PolicyBuilderOptions {
  */
 class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
-  _zitiBrowzerServiceWorkerGlobalScope: any;
-  private readonly _zitiNetworkTimeoutSeconds: number;
+  _ztBrowzerServiceWorkerGlobalScope: any;
+  private readonly _ztNetworkTimeoutSeconds: number;
   private readonly _logLevel: string;
   private readonly _controllerApi: string;
   private _core: any;
   private logger: any;
-  private _zitiContext: any;
+  private _ztContext: any;
   private _initialized: boolean;
   private _initializationMutex: any;
   private _uuid: any;
@@ -105,18 +105,18 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
   /**
    * @param {Object} [options]
-   * @param {string} [options._zitiBrowzerServiceWorkerGlobalScope] config dsts
+   * @param {string} [options._ztBrowzerServiceWorkerGlobalScope] config dsts
    * @param {string} [options._logLevel] Which level to log at
    * @param {string} [options._controllerApi] Location of Ziti Controller
-   * @param {number} [options.zitiNetworkTimeoutSeconds] If set, any network requests
+   * @param {number} [options.ztNetworkTimeoutSeconds] If set, any network requests
    * that fail to respond within the timeout will fallback to the cache.
    *
    */
   constructor(options: ZitiFirstOptions = {}) {
     super(options);
 
-    this._zitiBrowzerServiceWorkerGlobalScope = options.zitiBrowzerServiceWorkerGlobalScope || 0;
-    this._zitiNetworkTimeoutSeconds = options.zitiNetworkTimeoutSeconds || 0;
+    this._ztBrowzerServiceWorkerGlobalScope = options.ztBrowzerServiceWorkerGlobalScope || 0;
+    this._ztNetworkTimeoutSeconds = options.ztNetworkTimeoutSeconds || 0;
     this._logLevel = options.logLevel || 'Silent';
     this._controllerApi = options.controllerApi || '<controllerApi-not-configured>';
     this._initialized = false;
@@ -134,7 +134,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       logLevel: this._logLevel,
       suffix: 'ZBSW',
       useSWPostMessage: options.eruda,
-      zitiBrowzerServiceWorkerGlobalScope: this._zitiBrowzerServiceWorkerGlobalScope,    
+      ztBrowzerServiceWorkerGlobalScope: this._ztBrowzerServiceWorkerGlobalScope,    
     });
     this.logger.trace(`ZitiFirstStrategy ctor completed`);
   }
@@ -188,21 +188,21 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     let origCSP = this.parseCSP(val);
     this.logger.trace( `generateNewCSP() origCSP: `, origCSP);
 
-    let idpURL = new URL(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.idp.host);
+    let idpURL = new URL(this._ztBrowzerServiceWorkerGlobalScope._ztConfig.idp.host);
     let idpHost = idpURL.host;
-    let controllerURL = new URL(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.controller.api);
+    let controllerURL = new URL(this._ztBrowzerServiceWorkerGlobalScope._ztConfig.controller.api);
     let controllerHost = controllerURL.host;
 
     if (origCSP['default-src']) {
       origCSP['default-src'].push(`https://*.netfoundry.io:*`);
-      origCSP['default-src'].push(`https://*.cloudziti.io`);
+      origCSP['default-src'].push(`https://*.cloudzt.io`);
       origCSP['default-src'].push(`wss://*.netfoundry.io:*`);
       origCSP['default-src'].push("data:");
       origCSP['default-src'].push("https://opencollective.com");
     }
 
     if (origCSP['script-src']) {
-      origCSP['script-src'].push(`${this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.idp.host}`.replace('https://',''));
+      origCSP['script-src'].push(`${this._ztBrowzerServiceWorkerGlobalScope._ztConfig.idp.host}`.replace('https://',''));
       origCSP['script-src'].push(`canny.io`);
       if (!origCSP['script-src'].includes("'unsafe-eval'")) {
         origCSP['script-src'].push("'unsafe-eval'");
@@ -211,10 +211,10 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     if (origCSP['connect-src']) {
       origCSP['connect-src'].push(`${idpHost}`);
-      origCSP['connect-src'].push(`${this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host}`);
+      origCSP['connect-src'].push(`${this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host}`);
       origCSP['connect-src'].push(`${controllerHost}`);
       origCSP['connect-src'].push(`https://*.netfoundry.io:*`);
-      origCSP['connect-src'].push(`https://*.cloudziti.io`);
+      origCSP['connect-src'].push(`https://*.cloudzt.io`);
       origCSP['connect-src'].push(`wss://*.netfoundry.io:*`);
       origCSP['connect-src'].push(`wss://localhost:*`);
       if (!origCSP['connect-src'].includes("data:")) {
@@ -224,7 +224,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     if (origCSP['img-src']) {
       origCSP['img-src'].push(`data:`);
-      origCSP['img-src'].push(`${this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host}`);
+      origCSP['img-src'].push(`${this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host}`);
       origCSP['img-src'].push(`*`);
     }
 
@@ -256,37 +256,37 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
   }
 
   /**
-   * Remain in lazy-sleepy loop until z-b-runtime sends us the _zitiConfig
+   * Remain in lazy-sleepy loop until z-b-runtime sends us the _ztConfig
    * 
    */
-  async await_zitiConfig(requestUrl: string, _handler: StrategyHandler) {
+  async await_ztConfig(requestUrl: string, _handler: StrategyHandler) {
     let self = this;
     let ctr = 0;
     let waitTime = 100;
 
     return new Promise((resolve: any, _reject: any) => {
-      (async function waitFor_zitiConfig() {
-        if (isUndefined(self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig) || isUndefined(self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.access_token)) {
+      (async function waitFor_ztConfig() {
+        if (isUndefined(self._ztBrowzerServiceWorkerGlobalScope._ztConfig) || isUndefined(self._ztBrowzerServiceWorkerGlobalScope._ztConfig.access_token)) {
           ctr++;
-          self.logger.trace(`await_zitiConfig: ...waiting [${ctr}] for [${requestUrl}]`);
+          self.logger.trace(`await_ztConfig: ...waiting [${ctr}] for [${requestUrl}]`);
           if (ctr == 5) {  // kick the ZBR, and ask for the config
-            self.logger.trace( 'await_zitiConfig: sending ZITI_CONFIG_NEEDED msg to ZBR');  
-            self._zitiBrowzerServiceWorkerGlobalScope._sendMessageToClients( { type: 'ZITI_CONFIG_NEEDED'} );
-            setTimeout(waitFor_zitiConfig, waitTime);  
+            self.logger.trace( 'await_ztConfig: sending ZITI_CONFIG_NEEDED msg to ZBR');  
+            self._ztBrowzerServiceWorkerGlobalScope._sendMessageToClients( { type: 'ZITI_CONFIG_NEEDED'} );
+            setTimeout(waitFor_ztConfig, waitTime);  
           }
           else if (ctr == 10) {  // only do the unregister once
-            self.logger.trace(`await_zitiConfig: initiating unregister`);
+            self.logger.trace(`await_ztConfig: initiating unregister`);
             // Let's try and 'reboot' the ZBR/SW pair
-            await self._zitiBrowzerServiceWorkerGlobalScope._unregister();
+            await self._ztBrowzerServiceWorkerGlobalScope._unregister();
             return resolve( -1 );
           } 
           
           else {
-            setTimeout(waitFor_zitiConfig, waitTime);  
+            setTimeout(waitFor_ztConfig, waitTime);  
           }
 
         } else {
-          self.logger.trace(`await_zitiConfig: config acquired for [${requestUrl}]`);
+          self.logger.trace(`await_ztConfig: config acquired for [${requestUrl}]`);
           return resolve( 0 );
         }
       })();
@@ -302,15 +302,15 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     let ctr = 0;
     return new Promise((resolve: any, reject: any) => {
       (function waitFor_zbrInitialized() {
-        if (self._zitiBrowzerServiceWorkerGlobalScope._zbrReloadPending) { // this gets reset when ZBR sends the SW the 
+        if (self._ztBrowzerServiceWorkerGlobalScope._zbrReloadPending) { // this gets reset when ZBR sends the SW the 
           self.logger.trace(`await_zbrInitialized: ...waiting for [${request.url}]`);
           ctr++;
           if (ctr > 40) {return reject();}
           setTimeout(waitFor_zbrInitialized, 250);
         } else {
           self.logger.trace(`await_zbrInitialized: ...acquired for [${request.url}]`);
-          self.logger.trace(`await_zbrInitialized: ...setting logLevel to [${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.sw.logLevel}]`);
-          self.logger.logLevel = self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.sw.logLevel;
+          self.logger.trace(`await_zbrInitialized: ...setting logLevel to [${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.sw.logLevel}]`);
+          self.logger.logLevel = self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.sw.logLevel;
           return resolve();
         }
       })();
@@ -322,9 +322,9 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`accessTokenRefreshedEventHandler() ${accessTokenRefreshedEvent}`);
 
-    this._zitiBrowzerServiceWorkerGlobalScope._currentAPISession = this._zitiBrowzerServiceWorkerGlobalScope._zitiContext.getCurrentAPISession();
+    this._ztBrowzerServiceWorkerGlobalScope._currentAPISession = this._ztBrowzerServiceWorkerGlobalScope._ztContext.getCurrentAPISession();
 
-    this._zitiBrowzerServiceWorkerGlobalScope._accessTokenRefreshed(); // This will cause ZBR to ask us for the new data
+    this._ztBrowzerServiceWorkerGlobalScope._accessTokenRefreshed(); // This will cause ZBR to ask us for the new data
 
   }
 
@@ -337,13 +337,13 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
       this.logger.trace( `idpAuthHealthEventHandler: authToken has expired and will be torn down`);
 
-      setTimeout(function(_zitiBrowzerServiceWorkerGlobalScope: any) {
-        _zitiBrowzerServiceWorkerGlobalScope._accessTokenExpired(); // This will cause a logout with the IdP
-      }, 10, this._zitiBrowzerServiceWorkerGlobalScope);
+      setTimeout(function(_ztBrowzerServiceWorkerGlobalScope: any) {
+        _ztBrowzerServiceWorkerGlobalScope._accessTokenExpired(); // This will cause a logout with the IdP
+      }, 10, this._ztBrowzerServiceWorkerGlobalScope);
 
-      setTimeout(function(_zitiBrowzerServiceWorkerGlobalScope: any) {
-        _zitiBrowzerServiceWorkerGlobalScope._unregister();         // Let's try and 'reboot' the ZBR/SW pair
-      }, 500, this._zitiBrowzerServiceWorkerGlobalScope);
+      setTimeout(function(_ztBrowzerServiceWorkerGlobalScope: any) {
+        _ztBrowzerServiceWorkerGlobalScope._unregister();         // Let's try and 'reboot' the ZBR/SW pair
+      }, 500, this._ztBrowzerServiceWorkerGlobalScope);
 
     }
   }
@@ -352,7 +352,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`noConfigForServiceEventHandler() `, noConfigForServiceEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._noConfigForService(noConfigForServiceEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._noConfigForService(noConfigForServiceEvent);
 
   }
 
@@ -360,7 +360,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`noConfigProtocolForServiceEventHandler() `, noConfigProtocolForServiceEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._noConfigProtocolForService(noConfigProtocolForServiceEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._noConfigProtocolForService(noConfigProtocolForServiceEvent);
 
   }
 
@@ -368,7 +368,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`WSSEnabledEdgeRouterConnectionErrorEventHandler() `, wssERConnectionErrorEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._wssERConnectionError(wssERConnectionErrorEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._wssERConnectionError(wssERConnectionErrorEvent);
 
   }
 
@@ -376,7 +376,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`ControllerConnectionErrorEventHandler() `, controllerConnectionErrorEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._controllerConnectionError(controllerConnectionErrorEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._controllerConnectionError(controllerConnectionErrorEvent);
 
   }
 
@@ -384,9 +384,9 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`sessionCreationErrorEventHandler() `, sessionCreationErrorEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._sessionCreationError(sessionCreationErrorEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._sessionCreationError(sessionCreationErrorEvent);
 
-    this._zitiBrowzerServiceWorkerGlobalScope._unregisterNoReload();
+    this._ztBrowzerServiceWorkerGlobalScope._unregisterNoReload();
 
   }
 
@@ -394,9 +394,9 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`noServiceEventHandler() `, noServiceEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._noService(noServiceEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._noService(noServiceEvent);
 
-    this._zitiBrowzerServiceWorkerGlobalScope._unregisterNoReload();
+    this._ztBrowzerServiceWorkerGlobalScope._unregisterNoReload();
 
   }
 
@@ -404,7 +404,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`invalidAuthEventHandler() `, invalidAuthEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._invalidAuth(invalidAuthEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._invalidAuth(invalidAuthEvent);
 
   }
 
@@ -412,7 +412,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`noWSSRoutersEventHandler() `, noWSSRoutersEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._noWSSRouters(noWSSRoutersEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._noWSSRouters(noWSSRoutersEvent);
 
   }
 
@@ -420,19 +420,19 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     this.logger.trace(`channelConnectFailEventHandler() `, channelConnectFailEvent);
 
-    await this._zitiBrowzerServiceWorkerGlobalScope._channelConnectFail(channelConnectFailEvent);
+    await this._ztBrowzerServiceWorkerGlobalScope._channelConnectFail(channelConnectFailEvent);
 
   }
 
   async xgressEventHandler(xgressEvent: any) {
 
-    this._zitiBrowzerServiceWorkerGlobalScope._xgressEvent(xgressEvent);
+    this._ztBrowzerServiceWorkerGlobalScope._xgressEvent(xgressEvent);
 
   }
 
   async nestedTLSHandshakeTimeoutEventHandler(nestedTLSHandshakeTimeoutEvent: any) {
 
-    this._zitiBrowzerServiceWorkerGlobalScope._nestedTLSHandshakeTimeout(nestedTLSHandshakeTimeoutEvent);
+    this._ztBrowzerServiceWorkerGlobalScope._nestedTLSHandshakeTimeout(nestedTLSHandshakeTimeoutEvent);
 
   }
   
@@ -451,52 +451,52 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
           this.logger.trace(`_initialize: entered`);
 
-          if (isUndefined(this._zitiContext)) {
+          if (isUndefined(this._ztContext)) {
 
-            this._zitiContext = this._core.createZitiContext({
+            this._ztContext = this._core.createZitiContext({
               logger:         this.logger,
               controllerApi:  this._controllerApi,
               sdkType:        pjson.name,
               sdkVersion:     pjson.version,
-              sdkBranch:      this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.sdkBranch,
-              sdkRevision:    this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.sdkRevision,
-              token_type:     this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.token_type,
-              id_token:       this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.id_token,
-              access_token:   this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.access_token,
-              bootstrapperTargetService: this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service,
-              bootstrapperHost: this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host,
+              sdkBranch:      this._ztBrowzerServiceWorkerGlobalScope._ztConfig.sdkBranch,
+              sdkRevision:    this._ztBrowzerServiceWorkerGlobalScope._ztConfig.sdkRevision,
+              token_type:     this._ztBrowzerServiceWorkerGlobalScope._ztConfig.token_type,
+              id_token:       this._ztBrowzerServiceWorkerGlobalScope._ztConfig.id_token,
+              access_token:   this._ztBrowzerServiceWorkerGlobalScope._ztConfig.access_token,
+              bootstrapperTargetService: this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service,
+              bootstrapperHost: this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host,
             });
             this.logger.trace(`_initialize: ZitiContext created`);
-            this._zitiBrowzerServiceWorkerGlobalScope._zitiContext = this._zitiContext;
+            this._ztBrowzerServiceWorkerGlobalScope._ztContext = this._ztContext;
 
             // Make SW scope available to idpAuthHealthEventHandler
-            this._zitiContext._zitiBrowzerServiceWorkerGlobalScope = this._zitiBrowzerServiceWorkerGlobalScope;
+            this._ztContext._ztBrowzerServiceWorkerGlobalScope = this._ztBrowzerServiceWorkerGlobalScope;
 
-            this._zitiContext.setKeyTypeEC();
+            this._ztContext.setKeyTypeEC();
       
-            await this._zitiContext.initialize({
+            await this._ztContext.initialize({
               loadWASM: true,   // unlike the ZBR, here in the ZBSW, we always instantiate the internal WebAssembly
               doAuthenticate: true,   // unlike the ZBR, here in the ZBSW, we always auth with Controller
-              jspi:     this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.jspi,
-              target:   this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target,
-              bootstrapperHost:   this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host
+              jspi:     this._ztBrowzerServiceWorkerGlobalScope._ztConfig.jspi,
+              target:   this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target,
+              bootstrapperHost:   this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host
             });
 
-            await this._zitiContext.listControllerVersion();
+            await this._ztContext.listControllerVersion();
 
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_IDP_AUTH_HEALTH,        this.idpAuthHealthEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_CONFIG_FOR_SERVICE,  this.noConfigForServiceEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_SERVICE,             this.noServiceEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_SESSION_CREATION_ERROR, this.sessionCreationErrorEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_INVALID_AUTH,           this.invalidAuthEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_CHANNEL_CONNECT_FAIL,   this.channelConnectFailEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_WSS_ROUTERS,         this.noWSSRoutersEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_XGRESS,                 this.xgressEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_NESTED_TLS_HANDSHAKE_TIMEOUT,  this.nestedTLSHandshakeTimeoutEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_CONFIG_PROTOCOL_FOR_SERVICE,  this.noConfigProtocolForServiceEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_WSS_ROUTER_CONNECTION_ERROR,  this.WSSEnabledEdgeRouterConnectionErrorEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_CONTROLLER_CONNECTION_ERROR,  this.ControllerConnectionErrorEventHandler);
-            this._zitiContext.on(ZITI_CONSTANTS.ZITI_EVENT_ACCESS_TOKEN_REFRESHED,  this.accessTokenRefreshedEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_IDP_AUTH_HEALTH,        this.idpAuthHealthEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_CONFIG_FOR_SERVICE,  this.noConfigForServiceEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_SERVICE,             this.noServiceEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_SESSION_CREATION_ERROR, this.sessionCreationErrorEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_INVALID_AUTH,           this.invalidAuthEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_CHANNEL_CONNECT_FAIL,   this.channelConnectFailEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_WSS_ROUTERS,         this.noWSSRoutersEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_XGRESS,                 this.xgressEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_NESTED_TLS_HANDSHAKE_TIMEOUT,  this.nestedTLSHandshakeTimeoutEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_NO_CONFIG_PROTOCOL_FOR_SERVICE,  this.noConfigProtocolForServiceEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_WSS_ROUTER_CONNECTION_ERROR,  this.WSSEnabledEdgeRouterConnectionErrorEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_CONTROLLER_CONNECTION_ERROR,  this.ControllerConnectionErrorEventHandler);
+            this._ztContext.on(ZITI_CONSTANTS.ZITI_EVENT_ACCESS_TOKEN_REFRESHED,  this.accessTokenRefreshedEventHandler);
 
       
             this.logger.trace(`_initialize: ZitiContext '${this._uuid}' initialized`);
@@ -504,14 +504,14 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           } else {
 
             this.logger.trace(`_initialize: initiating unregister`);
-            await this._zitiBrowzerServiceWorkerGlobalScope._unregister(); // Let's try and 'reboot' the ZBR/SW pair
+            await this._ztBrowzerServiceWorkerGlobalScope._unregister(); // Let's try and 'reboot' the ZBR/SW pair
             this.logger.trace(`_initialize: terminated`);
 
           }
     
           setTimeout(async function(self: any, resolve: any) {
 
-            let result = await self._zitiContext.enroll(); // this acquires an ephemeral Cert
+            let result = await self._ztContext.enroll(); // this acquires an ephemeral Cert
 
             if (!result) {
               
@@ -521,7 +521,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
   
               self.logger.trace(`_initialize: initiating unregister`);
               
-              await self._zitiBrowzerServiceWorkerGlobalScope._unregister(); // Let's try and 'reboot' the ZBR/SW pair
+              await self._ztBrowzerServiceWorkerGlobalScope._unregister(); // Let's try and 'reboot' the ZBR/SW pair
   
               self.logger.trace(`_initialize: terminated`);
   
@@ -529,11 +529,11 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
               
               self.logger.trace(`_initialize: ephemeral Cert acquisition succeeded`);
   
-              self._rootPaths.push(self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.path);
+              self._rootPaths.push(self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.path);
   
               self._initialized = true;
 
-              self._zitiBrowzerServiceWorkerGlobalScope._currentAPISession = self._zitiContext.getCurrentAPISession();
+              self._ztBrowzerServiceWorkerGlobalScope._currentAPISession = self._ztContext.getCurrentAPISession();
         
               self.logger.trace(`_initialize: ZitiContext '${self._uuid}' initialize complete`);
 
@@ -561,8 +561,8 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
   }
 
-  _sendServiceUnavailable(_zitiBrowzerServiceWorkerGlobalScope: any, newUrl: any) {
-    _zitiBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
+  _sendServiceUnavailable(_ztBrowzerServiceWorkerGlobalScope: any, newUrl: any) {
+    _ztBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
       { 
         type: 'SERVICE_UNAVAILABLE_TO_IDENTITY',
         payload: {
@@ -590,7 +590,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     result.url = url.toString();
     let targetHost = url.hostname;
     let targetPort = url.port;
-    if (isEqual(targetHost, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host) && isEqual(targetPort,'')) {
+    if (isEqual(targetHost, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host) && isEqual(targetPort,'')) {
       targetPort = '443';
     }
     let targetPath = url.pathname;
@@ -602,17 +602,17 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       // ...we want to intercept any request from the web app that targets the server from 
       // which the app was loaded.
     
-      let targetserviceHost = await this._zitiContext.getConfigHostByServiceName (this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service);
-      let connectAppData = await this._zitiContext.getConnectAppDataByServiceName (this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.scheme);
+      let targetserviceHost = await this._ztContext.getConfigHostByServiceName (this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service);
+      let connectAppData = await this._ztContext.getConnectAppDataByServiceName (this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.scheme);
       var targetServiceRegex = new RegExp( targetserviceHost , 'g' );
-      var browzerLoadBalancerRegex = new RegExp( this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.host , 'g' );
+      var browzerLoadBalancerRegex = new RegExp( this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.host , 'g' );
     
       if (
-        (isEqual(targetHost, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host) && (isEqual(targetPort, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.port))) // yes, the request is targeting the Ziti BrowZer Bootstrapper
+        (isEqual(targetHost, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host) && (isEqual(targetPort, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.port))) // yes, the request is targeting the Ziti BrowZer Bootstrapper
         || 
-        (isEqual(targetHost, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host) && (isEqual(targetPort, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.port))) // yes, the request is targeting the Ziti BrowZer LB
+        (isEqual(targetHost, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host) && (isEqual(targetPort, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.port))) // yes, the request is targeting the Ziti BrowZer LB
         ||
-        (this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.host && request.url.match( browzerLoadBalancerRegex )) 
+        (this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.host && request.url.match( browzerLoadBalancerRegex )) 
       ) {   // yes, the request is targeting the Ziti BrowZer LoadBalancer
     
         var newUrl = new URL( request.url );
@@ -621,8 +621,8 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
           result.routeOverZiti = true;
 
-          result.serviceName = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service;  
-          result.serviceScheme = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.scheme;
+          result.serviceName = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service;  
+          result.serviceScheme = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.scheme;
           result.serviceConnectAppData = connectAppData;
         }
         else if ( (request.url.match( regexZBR )) || (request.url.match( regexZBRnaked )) || (request.url.match( regexZBWASM )) || (request.url.match( regexZBRLogo )) || (request.url.match( regexZBRcss )) || (request.url.match( regexZBRCORS ))) { // the request seeks z-b-r/wasm/logo/css/cors-proxy
@@ -634,14 +634,14 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           // Don't muck with URL only because top-level domain of target matches the top-level domain of the load-balancer. 
           // Only do that if the entire hostname matches, or else sub-domains represented by different Services will be routed 
           // to the wrong place.
-          if (isEqual(newUrl.hostname, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host)) {
+          if (isEqual(newUrl.hostname, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host)) {
 
-            newUrl.hostname = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service;
-            newUrl.port = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.port;
+            newUrl.hostname = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service;
+            newUrl.port = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.port;
 
             if (
-              isEqual(newUrl.port, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.port) ||
-              isEqual(newUrl.port, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.port)
+              isEqual(newUrl.port, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.port) ||
+              isEqual(newUrl.port, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.port)
             ) {
               newUrl.port = '';
             }
@@ -649,25 +649,25 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           }
 
           var pathnameArray = newUrl.pathname.split('/');
-          var targetpathnameArray = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.path.split('/');
+          var targetpathnameArray = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.path.split('/');
 
           if (!isEqual(pathnameArray[1], targetpathnameArray[1])) {
-            newUrl.pathname = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.path + newUrl.pathname;
+            newUrl.pathname = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.path + newUrl.pathname;
             newUrl.pathname = newUrl.pathname.replace('//','/');
           }
           this.logger.trace( '_shouldRouteOverZiti: transformed URL: ', newUrl.toString());
       
-          result.serviceName = await this._zitiContext.shouldRouteOverZiti( newUrl );
+          result.serviceName = await this._ztContext.shouldRouteOverZiti( newUrl );
           this.logger.trace(`_shouldRouteOverZiti result.serviceName[${result.serviceName}]`);
     
           if (isUndefined(result.serviceName) || isEqual(result.serviceName, '')) { // If we have no config associated with the hostname:port, do not intercept
             this.logger.warn(`_shouldRouteOverZiti: no associated Ziti config, bypassing intercept of [${request.url}]`);
-            setTimeout(this._sendServiceUnavailable, 250, this._zitiBrowzerServiceWorkerGlobalScope, newUrl);
+            setTimeout(this._sendServiceUnavailable, 250, this._ztBrowzerServiceWorkerGlobalScope, newUrl);
           } else {
             result.routeOverZiti = true;
 
             result.url = newUrl.toString();
-            result.serviceScheme = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.scheme;
+            result.serviceScheme = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.scheme;
             result.serviceConnectAppData = connectAppData;
           }   
     
@@ -678,7 +678,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       // If no routing determination has been made yet
       if (isUndefined(result.routeOverZiti)) {
 
-        result.serviceName = await this._zitiContext.shouldRouteOverZiti( url );
+        result.serviceName = await this._ztContext.shouldRouteOverZiti( url );
         this.logger.trace(`_shouldRouteOverZiti result.serviceName[${result.serviceName}]`);
 
         if (isUndefined(result.serviceName) || isEqual(result.serviceName, '')) { // If we have no config associated with the hostname:port, do not intercept
@@ -693,7 +693,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           result.url = url.toString();
           result.serviceScheme = url.protocol;
 
-          let connectAppData = await this._zitiContext.getConnectAppDataByServiceName (result.serviceName, url.protocol);
+          let connectAppData = await this._ztContext.getConnectAppDataByServiceName (result.serviceName, url.protocol);
 
           result.serviceConnectAppData = connectAppData;
         }
@@ -826,7 +826,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     }
 
     // if (request.url.match( regexLibRdpHtml )) {
-    //   await this._zitiBrowzerServiceWorkerGlobalScope._sendMessageToClients( { type: 'REAPPLY_WEBSOCKET_INTERCEPT'} );
+    //   await this._ztBrowzerServiceWorkerGlobalScope._sendMessageToClients( { type: 'REAPPLY_WEBSOCKET_INTERCEPT'} );
     // }
 
     if (this._isRootPATH(request)) {
@@ -835,7 +835,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       const codeParm = urlSearchParams.get('code');
       const stateParm = urlSearchParams.get('state');
       if (codeParm && stateParm) {    // possible IdP-related URL
-        if (this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig && requestURL.hostname === this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host) {  // ..but if hitting the protected web app itself
+        if (this._ztBrowzerServiceWorkerGlobalScope._ztConfig && requestURL.hostname === this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host) {  // ..but if hitting the protected web app itself
           tryZiti = true;                                                              // ..then let it go over Ziti
         } else {
           tryZiti = false;                                                             // ..otherwise, route over raw internet since it's IdP-related
@@ -843,7 +843,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       }    
     }
 
-    if (tryZiti && this._zitiBrowzerServiceWorkerGlobalScope._zbrReloadPending) {
+    if (tryZiti && this._ztBrowzerServiceWorkerGlobalScope._zbrReloadPending) {
       if (request.url.match( regexZBWASM )) {  // the ZBR loads the WASM during init, so we need to process that request; all others wait
         /* NOP */
       }
@@ -853,16 +853,16 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       else {
         await this.await_zbrInitialized(request).catch( async ( _err: any ) => {
           this.logger.debug(`ZBR init not responding`);
-          await this._zitiBrowzerServiceWorkerGlobalScope._unregister();  
+          await this._ztBrowzerServiceWorkerGlobalScope._unregister();  
           throw new WorkboxError('no-response', {url: request.url});
         });    
       }
     }
 
     if (tryZiti && (!this._isRootPATH(request)) && (!request.url.match( regexZBR ))) {       // if NOT in the process of bootstrapping from HTTP Agent
-      if (isUndefined(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig) ) {  // ...and we don't yet have the zitiConfig from ZBR
+      if (isUndefined(this._ztBrowzerServiceWorkerGlobalScope._ztConfig) ) {  // ...and we don't yet have the ztConfig from ZBR
         if (!request.url.match( regexEdgeClt )) {                                 // ...and NOT hitting the controller
-          let result: any = await this.await_zitiConfig(request.url, handler);                      // ...then wait for ZBR to send zitiConfig to us
+          let result: any = await this.await_ztConfig(request.url, handler);                      // ...then wait for ZBR to send ztConfig to us
           if (result < 0) {
             let redirectResponse = new Response('', {                             // If ZBR is AWOL, initiate top-level page reboot
                 status: 302,
@@ -900,7 +900,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     if (tryZiti) {   
       if (this._isRootPATH(request) ) {               // seeking root path
         bootstrappingZBRFromSW = true;
-        if (isUndefined(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig) ) {  // ...but we don't yet have the zitiConfig from ZBR
+        if (isUndefined(this._ztBrowzerServiceWorkerGlobalScope._ztConfig) ) {  // ...but we don't yet have the ztConfig from ZBR
           tryZiti = false;                            // ...then we're bootstrapping, so load ZBR from HTTP Agent
           bootstrappingZBRFromSWConfigNeeded = true;
         }
@@ -909,8 +909,8 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
     if ( tryZiti ) {
 
-      if (isUndefined(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig)) {
-        let result: any = await this.await_zitiConfig(request.url, handler);
+      if (isUndefined(this._ztBrowzerServiceWorkerGlobalScope._ztConfig)) {
+        let result: any = await this.await_ztConfig(request.url, handler);
         if (result < 0) {
           let redirectResponse = new Response('', {  // If ZBR is AWOL, initiate top-level page reboot
               status: 302,
@@ -925,22 +925,22 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       }
 
       // If going over Ziti, we must first complete the work to ensure WASM is instantiated, we have a cert, etc
-      await this.await_zitiConfig('null', handler); // wait for ZBR to send zitiConfig to us
+      await this.await_ztConfig('null', handler); // wait for ZBR to send ztConfig to us
       await this._initialize();
-      this._targetServiceHost = await this._zitiContext.getConfigHostByServiceName (this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service);
+      this._targetServiceHost = await this._ztContext.getConfigHostByServiceName (this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service);
         
       // Now determine if we're going over Ziti or not
       shouldRoute = await this._shouldRouteOverZiti(request);
     }
 
-    if (this._zitiNetworkTimeoutSeconds) {
+    if (this._ztNetworkTimeoutSeconds) {
       const {id, promise} = this._getZitiTimeoutPromise({request, handler});
       timeoutId = id;
       promises.push(promise);
     }
 
     let networkPromise;
-    let zitiNetworkPromise;
+    let ztNetworkPromise;
 
     if (!shouldRoute.routeOverZiti) {
 
@@ -959,7 +959,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
       this.logger.trace(`_handle: ------- routing over Ziti ----------`);
 
-      zitiNetworkPromise = this._getZitiNetworkPromise({
+      ztNetworkPromise = this._getZitiNetworkPromise({
         timeoutId,
         shouldRoute,
         request,
@@ -967,13 +967,13 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
         useCache,
       });
   
-      promises.push(zitiNetworkPromise);
+      promises.push(ztNetworkPromise);
     }
 
     response = await handler.waitUntil(
       (async () => {
 
-        let netPromise = networkPromise || zitiNetworkPromise;
+        let netPromise = networkPromise || ztNetworkPromise;
 
         // Promise.race() will resolve as soon as the first promise resolves.
         return (
@@ -998,7 +998,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     if (!response) {
       this.logger.error(`no-response when trying to reach URL [${request.url}]`);
 
-      await this._zitiBrowzerServiceWorkerGlobalScope._requestFailedWithNoResponse({
+      await this._ztBrowzerServiceWorkerGlobalScope._requestFailedWithNoResponse({
         url: request.url
       });
 
@@ -1073,7 +1073,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
             let url = new URL(attr);
             if (isEqual(url.host, self._targetServiceHost)) {
               attr = attr.replace('http:', 'https:');
-              attr = attr.replace(self._targetServiceHost, self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host);
+              attr = attr.replace(self._targetServiceHost, self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host);
               $(e).attr(attrType, attr);
             }
           } catch (e) {
@@ -1103,7 +1103,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           let url = new URL(importUrl);
           if (isEqual(url.host, self._targetServiceHost)) {
             text = text.replace('http:', 'https:');
-            text = text.replace(self._targetServiceHost, self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host);
+            text = text.replace(self._targetServiceHost, self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host);
             $(e).text(text);
           }
         }
@@ -1124,10 +1124,10 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           function _obtainBootStrapperURL() {
             let url;
         
-            if (self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.host) {
-              url = `https://${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host}:${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.loadbalancer.port}`;
+            if (self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.host) {
+              url = `https://${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host}:${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.loadbalancer.port}`;
             } else {
-              url = `${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.scheme}://${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host}:${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.port}`;
+              url = `${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.scheme}://${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host}:${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.port}`;
             }
             return url;
           }
@@ -1146,7 +1146,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
                   if (fullDocument && !fromBootstrapper) {
 
-                    let zbrLocation = self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.runtime.src;
+                    let zbrLocation = self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.runtime.src;
 
                     // Parse the HTML
                     const $ = cheerio.load(chunk, 
@@ -1175,19 +1175,19 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
                     self.logger.trace(`streamingHEADReplace: HTML before modifications is: ${$.html()}`);
 
-                    let zbrElement = $('<script></script> ').attr('id', 'from-ziti-browzer-sw').attr('type', 'text/javascript').attr('src', `${_obtainBootStrapperURL()}/${zbrLocation}`); //.attr('defer', `defer`);
+                    let zbrElement = $('<script></script> ').attr('id', 'from-zt-browzer-sw').attr('type', 'text/javascript').attr('src', `${_obtainBootStrapperURL()}/${zbrLocation}`); //.attr('defer', `defer`);
 
                     let cannyElement = $('<script></script> ')
-                        .attr('id', 'ziti-browzer-canny-setup')
+                        .attr('id', 'zt-browzer-canny-setup')
                         .attr('type', 'text/javascript')
                         .attr('src', `${_obtainBootStrapperURL()}/canny-setup.js`);
 
                     let ppElement = $('<script></script> ')
-                        .attr('id', 'ziti-browzer-pp')
+                        .attr('id', 'zt-browzer-pp')
                         .attr('type', 'text/javascript')
                         .attr('src', `${_obtainBootStrapperURL()}/polipop.min.js`);
                     let ppCss1Element = $('<link> ')
-                        .attr('id', 'ziti-browzer-ppcss')
+                        .attr('id', 'zt-browzer-ppcss')
                         .attr('rel', 'stylesheet')
                         .attr('href', `${_obtainBootStrapperURL()}/polipop.core.min.css`);
                     let ppCss2Element = $('<link> ')
@@ -1195,9 +1195,9 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
                         .attr('href', `${_obtainBootStrapperURL()}/polipop.compact.min.css`);
 
                     // let otElement = $('<meta></meta> ')
-                    //     .attr('id', 'ziti-browzer-origin-trial')
+                    //     .attr('id', 'zt-browzer-origin-trial')
                     //     .attr('http-equiv', 'origin-trial')
-                    //     .attr('content', `${self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.runtime.originTrialToken}`);
+                    //     .attr('content', `${self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.runtime.originTrialToken}`);
 
                     let kcElement = $('<meta name="author" content="Hanzo ZT BrowZer" />')
                    
@@ -1220,7 +1220,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
                       cspElement.after(ppElement);
                       // cspElement.after(otElement);
 
-                      // let otEl = $('meta[id="ziti-browzer-origin-trial"]');
+                      // let otEl = $('meta[id="zt-browzer-origin-trial"]');
                       // Inject the ZBR immediately after the origin trial meta
                       cspElement.after(zbrElement);
                       cspElement.after(cannyElement);
@@ -1258,7 +1258,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
               },
               flush(controller) {
                 if (buffer) {
-                  buffer = buffer.replace('document.domain', 'document.zitidomain');
+                  buffer = buffer.replace('document.domain', 'document.ztdomain');
                   self.logger.trace(`streamingHEADReplace: HTML after modifications is: ${buffer}`);
                   controller.enqueue(buffer);
                 }
@@ -1317,7 +1317,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
               },
               flush(controller) {
                 if (buffer) {
-                  buffer = buffer.replace(self._targetServiceHost, self._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host);
+                  buffer = buffer.replace(self._targetServiceHost, self._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host);
                   self.logger.trace('streamingXMLReplace: XML after modifications is: ', buffer);
                   controller.enqueue(buffer);
                 }
@@ -1372,12 +1372,12 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
     const timeoutPromise: Promise<Response | undefined> = new Promise(
       (resolve) => {
         const onNetworkTimeout = async () => {
-          self.logger.debug(`Timing out the network response at ${self._zitiNetworkTimeoutSeconds} seconds`);
+          self.logger.debug(`Timing out the network response at ${self._ztNetworkTimeoutSeconds} seconds`);
           resolve(await handler.cacheMatch(request));
         };
         timeoutId = setTimeout(
           onNetworkTimeout,
-          this._zitiNetworkTimeoutSeconds * 1000,
+          this._ztNetworkTimeoutSeconds * 1000,
         );
       },
     );
@@ -1391,11 +1391,11 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
   /**
    * 
-   * @param zitiRequest 
+   * @param ztRequest 
    * @returns body|undefined
    */
-  async getRequestBody( zitiRequest: any ) {
-    var requestBlob = await zitiRequest.blob();
+  async getRequestBody( ztRequest: any ) {
+    var requestBlob = await ztRequest.blob();
     if (requestBlob.size > 0) {
         return ( requestBlob );
     }
@@ -1425,7 +1425,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
   /**
    * @param {Object} options
    * @param {number|undefined} options.timeoutId
-   * @param {string} options.zitiURL
+   * @param {string} options.ztURL
    * @param {Request} options.request
    * @param {Event} options.event
    * @return {Promise<Response>}
@@ -1454,17 +1454,17 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       this.logger.debug(`doing Ziti fetch for: ${request.url}`);
 
       /**
-       * Instantiate a fresh HTTP Request object that we will push through the ziti-browzer-core which will:
+       * Instantiate a fresh HTTP Request object that we will push through the zt-browzer-core which will:
        * 
        * 1) contain re-routed host
        * 2) have any headers we need to pile on
        * 3) prepare to stream out any body data associated with the intercepted request
        */                 
-      const zitiRequest = new Request(request, {} );
+      const ztRequest = new Request(request, {} );
       
       var newHeaders = new Headers();
 
-      zitiRequest.headers.forEach(function (header, key) {
+      ztRequest.headers.forEach(function (header, key) {
         if (!isEqual(key, 'origin')) {
           newHeaders.append( key, header );
         }
@@ -1474,7 +1474,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
       }
 
       try {
-        newHeaders.append( 'Remote-User', await this._zitiContext.getAccessTokenEmail() );
+        newHeaders.append( 'Remote-User', await this._ztContext.getAccessTokenEmail() );
       } catch (e) {}
 
       if (isEqual(request.mode,'navigate')) {
@@ -1484,10 +1484,10 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
       // Propagate any Cookie values we have accumulated
       let cookieHeaderValue = '';
-      for (const cookie in this._zitiBrowzerServiceWorkerGlobalScope._cookieObject) {
-        if (cookie !== '' && !isEqual(cookie, '__ziti-browzer-config')) { // don't send the ZBR config cookie
-              if (this._zitiBrowzerServiceWorkerGlobalScope._cookieObject.hasOwnProperty(cookie)) {
-                  cookieHeaderValue += cookie + '=' + this._zitiBrowzerServiceWorkerGlobalScope._cookieObject[cookie];
+      for (const cookie in this._ztBrowzerServiceWorkerGlobalScope._cookieObject) {
+        if (cookie !== '' && !isEqual(cookie, '__zt-browzer-config')) { // don't send the ZBR config cookie
+              if (this._ztBrowzerServiceWorkerGlobalScope._cookieObject.hasOwnProperty(cookie)) {
+                  cookieHeaderValue += cookie + '=' + this._ztBrowzerServiceWorkerGlobalScope._cookieObject[cookie];
                   // this.logger.debug(`cookieHeaderValue: [${cookieHeaderValue}]`);
                   newHeaders.append( 'Cookie', cookieHeaderValue );
                   cookieHeaderValue = '';
@@ -1495,7 +1495,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           }
       }
           
-      var blob = await this.getRequestBody( zitiRequest );
+      var blob = await this.getRequestBody( ztRequest );
 
       let referrerUrlPathname = '/';
       if (request.referrer) {
@@ -1503,40 +1503,40 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
         referrerUrlPathname = referrerUrl.pathname;
       }
 
-      var zitiResponse = await this._zitiContext.httpFetch(
+      var ztResponse = await this._ztContext.httpFetch(
           shouldRoute.url, {
               serviceName:    shouldRoute.serviceName,
               serviceScheme:  shouldRoute.serviceScheme,
-              servicePath:    this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.path,
+              servicePath:    this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.path,
               serviceConnectAppData:  shouldRoute.serviceConnectAppData,
-              bootstrapperHost: this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host,
-              method:         zitiRequest.method, 
+              bootstrapperHost: this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host,
+              method:         ztRequest.method, 
               headers:        newHeaders,
-              mode:           zitiRequest.mode,
-              cache:          zitiRequest.cache,
-              credentials:    zitiRequest.credentials,
-              redirect:       zitiRequest.redirect,
-              referrerPolicy: zitiRequest.referrerPolicy,
+              mode:           ztRequest.mode,
+              cache:          ztRequest.cache,
+              credentials:    ztRequest.credentials,
+              redirect:       ztRequest.redirect,
+              referrerPolicy: ztRequest.referrerPolicy,
               body:           blob
           }
       );        
 
-      this.logger.debug(`Got zitiResponse from [${zitiResponse.url}]`);
+      this.logger.debug(`Got ztResponse from [${ztResponse.url}]`);
 
       /**
-       * Now that ziti-browzer-core has returned us a ZitiResponse, instantiate a fresh native Response object that we 
+       * Now that zt-browzer-core has returned us a ZitiResponse, instantiate a fresh native Response object that we 
        * will return to the Browser. This requires us to:
        * 
        * 1) propagate the HTTP headers, status, etc
        * 2) pipe the HTTP response body 
        */
 
-      if (isUndefined(zitiResponse.headers.raw)) {
-       return zitiResponse;
+      if (isUndefined(ztResponse.headers.raw)) {
+       return ztResponse;
       }
 
-      var zitiHeaders = zitiResponse.headers.raw();
-      const contentType = zitiHeaders['content-type'];
+      var ztHeaders = ztResponse.headers.raw();
+      const contentType = ztHeaders['content-type'];
       let isTextHtml = false;
       let isTextXml = false;
       if (contentType && contentType[0] && contentType[0].match( regexTextHtml )) {  
@@ -1546,17 +1546,17 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
         isTextXml = true;
       }
       var headers = new Headers();
-      const keys = Object.keys(zitiHeaders);
+      const keys = Object.keys(ztHeaders);
       for (let i = 0; i < keys.length; i++) {
         let key = keys[i];
-        let val = zitiHeaders[key][0];
-        this.logger.trace(`ZitiFirstStrategy: zitiResponse.headers: [${key}] [${val}]`);
+        let val = ztHeaders[key][0];
+        this.logger.trace(`ZitiFirstStrategy: ztResponse.headers: [${key}] [${val}]`);
 
         if (key.toLowerCase() === 'set-cookie') {
           if (Array.isArray(val)) {
             for (var ndx = 0; ndx < val.length; ndx++) {
               this.logger.trace( 'ZitiFirstStrategy: sending SET_COOKIE cmd');
-              this._zitiBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
+              this._ztBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
                 { 
                   type: 'SET_COOKIE',
                   payload: val[ndx]
@@ -1571,13 +1571,13 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
 
               const result = extractCookieVal(val[ndx]);
 
-              this._zitiBrowzerServiceWorkerGlobalScope._cookieObject[parts[0]] = result;  
+              this._ztBrowzerServiceWorkerGlobalScope._cookieObject[parts[0]] = result;  
             }
           }
           else {
-            headers.append( 'x-ziti-browzer-set-cookie', val );
+            headers.append( 'x-zt-browzer-set-cookie', val );
             this.logger.trace( 'ZitiFirstStrategy: sending SET_COOKIE cmd');
-            let resp = await this._zitiBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
+            let resp = await this._ztBrowzerServiceWorkerGlobalScope._sendMessageToClients( 
               { 
                 type: 'SET_COOKIE',
                 payload: val
@@ -1585,7 +1585,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
             );
             this.logger.trace( 'ZitiFirstStrategy: SET_COOKIE response: ', resp);
             let parts = val.split('=');
-            this._zitiBrowzerServiceWorkerGlobalScope._cookieObject[parts[0]] = parts[1];  
+            this._ztBrowzerServiceWorkerGlobalScope._cookieObject[parts[0]] = parts[1];  
           }
         }
         else if (key.toLowerCase() === 'location') {
@@ -1623,7 +1623,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
           }
 
           // NOT YET
-          // val = updateSignInWithGoogleRedirectUri(val, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host, this.logger);
+          // val = updateSignInWithGoogleRedirectUri(val, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host, this.logger);
         
           let pathname;
           let skipTransform = false;
@@ -1642,10 +1642,10 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
             if (isUndefined(locationUrl)) { // i.e. it's a relative path (no slashes)
               pathname = `${referrerUrlPathname}${val}`;
             } else {
-              if (isEqual(locationUrl.hostname, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host)) {
+              if (isEqual(locationUrl.hostname, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host)) {
                 pathname = locationUrl.pathname + locationUrl.search;
               } else {
-                let serviceConnectAppData = await this._zitiBrowzerServiceWorkerGlobalScope._zitiContext.getConnectAppDataByServiceName(this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service, 'https');
+                let serviceConnectAppData = await this._ztBrowzerServiceWorkerGlobalScope._ztContext.getConnectAppDataByServiceName(this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service, 'https');
                 if (!isUndefined(serviceConnectAppData)) {
                   if (isEqual(locationUrl.hostname, serviceConnectAppData.dst_hostname)) {
                     pathname = locationUrl.pathname + locationUrl.search;
@@ -1665,8 +1665,8 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
               serviceScheme = serviceScheme + ":";
             }
             let serviceName = shouldRoute.serviceName;
-            if (isEqual(serviceName, this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.target.service)) {
-              serviceName = this._zitiBrowzerServiceWorkerGlobalScope._zitiConfig.browzer.bootstrapper.self.host;
+            if (isEqual(serviceName, this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.target.service)) {
+              serviceName = this._ztBrowzerServiceWorkerGlobalScope._ztConfig.browzer.bootstrapper.self.host;
             }
             let newLocationUrl = new URL(`${serviceScheme}//${serviceName}${pathname}`);
             val = newLocationUrl.toString();
@@ -1684,13 +1684,13 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
         
         headers.append( key, val);
       }
-      headers.append( 'x-ziti-browzer-sw-workbox-strategies-version', pjson.version );
+      headers.append( 'x-zt-browzer-sw-workbox-strategies-version', pjson.version );
 
-      if ( (!isEqual(zitiResponse.status, 204)) && (zitiResponse.status < 300 || zitiResponse.status > 399) ) {
+      if ( (!isEqual(ztResponse.status, 204)) && (ztResponse.status < 300 || ztResponse.status > 399) ) {
 
         if (isTextHtml) {
 
-          var responseBlob = await zitiResponse.blob();
+          var responseBlob = await ztResponse.blob();
           var responseBlobStream = responseBlob.stream();               
           const responseStream = new ReadableStream({
               start(controller) {
@@ -1708,11 +1708,11 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
               }
           });
   
-          response = new Response( responseStream, { "status": zitiResponse.status, "headers":  headers } );
+          response = new Response( responseStream, { "status": ztResponse.status, "headers":  headers } );
 
         } else if ( isTextXml ) {
 
-            var responseBlob = await zitiResponse.blob();
+            var responseBlob = await ztResponse.blob();
             var responseBlobStream = responseBlob.stream();               
             const responseStream = new ReadableStream({
                 start(controller) {
@@ -1730,7 +1730,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
                 }
             });
     
-            response = new Response( responseStream, { "status": zitiResponse.status, "headers":  headers } );
+            response = new Response( responseStream, { "status": ztResponse.status, "headers":  headers } );
             
         } else {
 
@@ -1749,25 +1749,25 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
                       }
                     } catch (e) {}
                   };
-                  zitiResponse.body.on('data', (chunk: any) => {
+                  ztResponse.body.on('data', (chunk: any) => {
                     push(chunk);
                   });
-                  zitiResponse.body.on('end', () => {
+                  ztResponse.body.on('end', () => {
                     push(null);
                   });
               }
           });
 
-          response = new Response( responseStream, { "status": zitiResponse.status, "headers":  headers } );
+          response = new Response( responseStream, { "status": ztResponse.status, "headers":  headers } );
         }
 
       } else {
 
-        response = new Response( null, { "status": zitiResponse.status, "headers":  headers } );
+        response = new Response( null, { "status": ztResponse.status, "headers":  headers } );
 
       }
       
-      this.logger.trace(`ZitiFirstStrategy: formed native response for [${zitiResponse.url}]`);
+      this.logger.trace(`ZitiFirstStrategy: formed native response for [${ztResponse.url}]`);
 
     } catch (fetchError) {
       this.logger.error(`Got error: `, fetchError);
@@ -1859,7 +1859,7 @@ class ZitiFirstStrategy extends CacheFirst /* NetworkFirst */ {
        */
       if (!response.ok && ( response.type === 'opaqueredirect' ) ) {
         this.logger.debug(`Got 'opaqueredirect' response from network; doing SW unregister now`);
-        await this._zitiBrowzerServiceWorkerGlobalScope._unregister();
+        await this._ztBrowzerServiceWorkerGlobalScope._unregister();
       }
   
     } else {
